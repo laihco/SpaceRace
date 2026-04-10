@@ -1,14 +1,13 @@
 /*  Space Race
 
-
 */
 
 'use strict'
 
 let config = {
     type: Phaser.AUTO,
-    width: 757,
-    height: 640,
+    width: 500,
+    height: 500,
     physics: {
         default: "arcade",
         arcade: {
@@ -16,7 +15,7 @@ let config = {
             debugShowStaticBody: false
         }
     },
-    scene: [ ]
+    scene: [Load, Map]
 }
 
 let game = new Phaser.Game(config)
