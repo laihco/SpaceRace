@@ -15,7 +15,7 @@ let config = {
             debugShowStaticBody: false
         }
     },
-    scene: [Load, Map]
+    scene: [FuelMinigame, Load, Map]
 }
 
 let game = new Phaser.Game(config)
