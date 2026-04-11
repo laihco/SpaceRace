@@ -13,6 +13,12 @@ class Load extends Phaser.Scene {
 
         //load the map
         this.load.image('map', 'temp.jpeg')
+
+        //load the pipes
+        this.load.spritesheet('pipe', 'pipes.png', {
+            frameWidth: 32,
+            frameHeight: 32
+        })
     }
 
     create() {
@@ -50,7 +56,10 @@ class Load extends Phaser.Scene {
             frames: this.anims.generateFrameNumbers('ace', { start: 16, end: 19 }),
         })
 
+        //pipe spritesheet
+
+
         // proceed once loading completes
-        this.scene.start('mapScene')
+        this.scene.start('pressureScene')
     }
 }

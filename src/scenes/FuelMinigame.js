@@ -1,208 +1,214 @@
-class FuelMinigame extends Phaser.Scene {
+class PressureScene extends Phaser.Scene {
     constructor() {
-        super('fuelMinigame');
+        super('pressureScene');
+    }
+
+    init() {
+        this.gridSize = 6;
+        this.tileSize = 64; 
+        this.timer = 30;
+        this.round = 1;
+        this.isLocked = false;
+        this.pipeGrid = [];
     }
 
     create() {
-        this.gridSize = 5;
-        this.cellSize = 80;
-        this.offsetX = 50;
-        this.offsetY = 50;
+        // Create the grid array
+        for (let i = 0; i < this.gridSize; i++) {
+            this.pipeGrid[i] = new Array(this.gridSize);
+        }
 
-        this.colors = ['red', 'blue', 'green', 'yellow'];
-        this.colorMap = {
-            red: 0xff4444,
-            blue: 0x4488ff,
-            green: 0x44ff44,
-            yellow: 0xffff44
-        };
+        this.setupGrid();
 
-        this.grid = [];
-        this.paths = {}; // solution paths
+        // UI Setup
+        this.timerText = this.add.text(20, 20, `TIME: ${this.timer}`, { 
+            fontSize: '28px', 
+            fill: '#00FF00',
+            fontFamily: 'Courier New'
+        });
 
-        this.isDrawing = false;
-        this.currentColor = null;
-        this.currentPath = [];
+        this.timerEvent = this.time.addEvent({
+            delay: 1000,
+            callback: this.tick,
+            callbackScope: this,
+            loop: true
+        });
 
-        this.createGrid();
-        this.generatePuzzle();
-        this.drawGrid();
-        this.setupInput();
+        // Start and End Visual Cues
+        // Start is Top-Left (0,0), End is Bottom-Right (5,5)
+        this.pipeGrid[0][0].setTint(0x00ff00); 
+        this.pipeGrid[this.gridSize-1][this.gridSize-1].setTint(0xff0000);
     }
 
-    // ---------------- GRID ----------------
-    createGrid() {
+    setupGrid() {
+        const offsetX = (500 - (this.gridSize * this.tileSize)) / 2 + (this.tileSize / 2);
+        const offsetY = (500 - (this.gridSize * this.tileSize)) / 2 + (this.tileSize / 2);
+
         for (let y = 0; y < this.gridSize; y++) {
-            this.grid[y] = [];
             for (let x = 0; x < this.gridSize; x++) {
-                this.grid[y][x] = {
-                    x,
-                    y,
-                    color: null,
-                    filled: false,
-                    endpoint: false
-                };
+                // Frames 0-3 correspond to your 2x2 sheet
+                let randomFrame = Phaser.Math.Between(0, 3);
+                let pipe = new Pipe(this, offsetX + (x * this.tileSize), offsetY + (y * this.tileSize), 'pipe', randomFrame);
+                
+                pipe.gridX = x;
+                pipe.gridY = y;
+                this.pipeGrid[y][x] = pipe;
             }
         }
     }
 
-    // ---------------- PUZZLE GENERATION ----------------
-    generatePuzzle() {
-        // Predefined safe paths (guaranteed solvable)
-        const predefinedPaths = [
-            [[0,0],[1,0],[2,0],[2,1],[2,2]],
-            [[4,0],[4,1],[3,1],[3,2],[3,3]],
-            [[0,4],[1,4],[1,3],[1,2],[0,2]],
-            [[4,4],[3,4],[2,4],[2,3],[4,2]]
+    tick() {
+        if (this.isLocked) return;
+        this.timer--;
+        this.timerText.setText(`TIME: ${this.timer}`);
+        if (this.timer <= 0) this.lockAndCheck();
+    }
+
+    lockAndCheck() {
+        this.isLocked = true;
+        this.timerText.setText("FLOWING...");
+
+        this.time.delayedCall(1500, () => {
+            const success = this.checkConnection();
+            if (success) {
+                this.timerText.setText("SUCCESS! SYSTEM STABLE");
+                this.time.delayedCall(2000, () => this.nextRound());
+            } else {
+                this.timerText.setText("CRITICAL LEAK! RESTARTING...");
+                this.time.delayedCall(2000, () => this.scene.restart());
+            }
+        });
+    }
+
+    checkConnection() {
+        let visited = new Set();
+        let queue = [this.pipeGrid[0][0]];
+
+        while (queue.length > 0) {
+            let curr = queue.shift();
+            if (curr.gridX === this.gridSize - 1 && curr.gridY === this.gridSize - 1) return true;
+
+            let posKey = `${curr.gridX},${curr.gridY}`;
+            if (visited.has(posKey)) continue;
+            visited.add(posKey);
+
+            let neighbors = this.getValidNeighbors(curr);
+            for (let n of neighbors) {
+                if (!visited.has(`${n.gridX},${n.gridY}`)) {
+                    queue.push(n);
+                }
+            }
+        }
+        return false;
+    }
+
+    getValidNeighbors(pipe) {
+        let valid = [];
+        let myOpenings = pipe.getOpenPorts();
+        
+        // [y_diff, x_diff, direction_from_me, required_direction_on_neighbor]
+        const directions = [
+            [-1, 0, 'T', 'B'], // Neighbor is Above me
+            [1, 0, 'B', 'T'],  // Neighbor is Below me
+            [0, -1, 'L', 'R'], // Neighbor is Left of me
+            [0, 1, 'R', 'L']   // Neighbor is Right of me
         ];
 
-        Phaser.Utils.Array.Shuffle(predefinedPaths);
+        for (let [dy, dx, myPort, targetPort] of directions) {
+            let ny = pipe.gridY + dy;
+            let nx = pipe.gridX + dx;
 
-        for (let i = 0; i < this.colors.length; i++) {
-            const color = this.colors[i];
-            const path = predefinedPaths[i];
-
-            this.paths[color] = path;
-
-            path.forEach(([x, y], index) => {
-                let cell = this.grid[y][x];
-                cell.color = color;
-
-                if (index === 0 || index === path.length - 1) {
-                    cell.endpoint = true;
-                }
-            });
-        }
-    }
-
-    // ---------------- DRAW ----------------
-    drawGrid() {
-        this.graphics = this.add.graphics();
-
-        for (let y = 0; y < this.gridSize; y++) {
-            for (let x = 0; x < this.gridSize; x++) {
-                let cell = this.grid[y][x];
-
-                let px = this.offsetX + x * this.cellSize;
-                let py = this.offsetY + y * this.cellSize;
-
-                this.graphics.lineStyle(2, 0xffffff);
-                this.graphics.strokeRect(px, py, this.cellSize, this.cellSize);
-
-                if (cell.endpoint) {
-                    this.graphics.fillStyle(this.colorMap[cell.color]);
-                    this.graphics.fillCircle(
-                        px + this.cellSize / 2,
-                        py + this.cellSize / 2,
-                        12
-                    );
+            if (ny >= 0 && ny < this.gridSize && nx >= 0 && nx < this.gridSize) {
+                let neighbor = this.pipeGrid[ny][nx];
+                if (myOpenings.includes(myPort) && neighbor.getOpenPorts().includes(targetPort)) {
+                    if (neighbor.stateMachine.state !== 'broken') {
+                        valid.push(neighbor);
+                    }
                 }
             }
         }
-
-        this.lineGraphics = this.add.graphics();
+        return valid;
     }
 
-    redrawLines() {
-        this.lineGraphics.clear();
-
-        for (let color in this.playerPaths) {
-            let path = this.playerPaths[color];
-            this.lineGraphics.lineStyle(10, this.colorMap[color]);
-
-            for (let i = 0; i < path.length - 1; i++) {
-                let a = path[i];
-                let b = path[i + 1];
-
-                this.lineGraphics.strokeLineShape(new Phaser.Geom.Line(
-                    this.getCenter(a.x, a.y).x,
-                    this.getCenter(a.x, a.y).y,
-                    this.getCenter(b.x, b.y).x,
-                    this.getCenter(b.x, b.y).y
-                ));
-            }
+    nextRound() {
+        this.round++;
+        this.timer = Math.max(10, 35 - (this.round * 5));
+        this.isLocked = false;
+        // Degrade pipe health
+        for(let row of this.pipeGrid) {
+            for(let p of row) { p.degrade(); }
         }
+        this.scene.restart(); // Simple way to reset visuals for next round
+    }
+}
+
+class Pipe extends Phaser.GameObjects.Sprite {
+    constructor(scene, x, y, texture, frame) {
+        super(scene, x, y, texture, frame);
+        scene.add.existing(this);
+        
+        this.setInteractive();
+        this.setDisplaySize(64, 64); // Force size to match grid
+        
+        this.stateMachine = new StateMachine('stable', {
+            stable: new StableState(),
+            leaking: new LeakingState(),
+            broken: new BrokenState()
+        }, [this]);
+
+        this.on('pointerdown', () => this.rotatePipe());
     }
 
-    // ---------------- INPUT ----------------
-    setupInput() {
-        this.playerPaths = {};
-
-        this.input.on('pointerdown', (pointer) => {
-            let cell = this.getCell(pointer.x, pointer.y);
-            if (!cell || !cell.endpoint) return;
-
-            this.isDrawing = true;
-            this.currentColor = cell.color;
-
-            this.playerPaths[this.currentColor] = [{ x: cell.x, y: cell.y }];
-        });
-
-        this.input.on('pointermove', (pointer) => {
-            if (!this.isDrawing) return;
-
-            let cell = this.getCell(pointer.x, pointer.y);
-            if (!cell) return;
-
-            let path = this.playerPaths[this.currentColor];
-            let last = path[path.length - 1];
-
-            if (!this.isAdjacent(last, cell)) return;
-
-            // prevent crossing other colors
-            if (cell.filled && cell.color !== this.currentColor) return;
-
-            // prevent going backwards weirdly
-            if (path.find(p => p.x === cell.x && p.y === cell.y)) return;
-
-            cell.filled = true;
-            cell.color = this.currentColor;
-
-            path.push({ x: cell.x, y: cell.y });
-
-            this.redrawLines();
-        });
-
-        this.input.on('pointerup', () => {
-            this.isDrawing = false;
-            this.checkWin();
-        });
+    rotatePipe() {
+        if (this.scene.isLocked || this.stateMachine.state === 'broken') return;
+        this.angle += 90;
+        // Normalize angle to 0, 90, 180, 270
+        if (this.angle >= 360) this.angle = 0;
     }
 
-    // ---------------- HELPERS ----------------
-    getCell(px, py) {
-        let x = Math.floor((px - this.offsetX) / this.cellSize);
-        let y = Math.floor((py - this.offsetY) / this.cellSize);
-
-        if (x < 0 || y < 0 || x >= this.gridSize || y >= this.gridSize) return null;
-        return this.grid[y][x];
-    }
-
-    getCenter(x, y) {
-        return {
-            x: this.offsetX + x * this.cellSize + this.cellSize / 2,
-            y: this.offsetY + y * this.cellSize + this.cellSize / 2
-        };
-    }
-
-    isAdjacent(a, b) {
-        return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
-    }
-
-    // ---------------- WIN CHECK ----------------
-    checkWin() {
-        for (let color of this.colors) {
-            let solution = this.paths[color];
-            let player = this.playerPaths[color];
-
-            if (!player) return;
-
-            if (player.length !== solution.length) return;
+    getOpenPorts() {
+        // Frame mapping (based on 2x2 sheet):
+        // 0 (1,1): Cross (+)
+        // 1 (2,1): L-shape (┘) - assume connects Left and Bottom at 0 deg
+        // 2 (1,2): Straight (-) - assume connects Left and Right at 0 deg
+        // 3 (2,2): T-shape (┴) - assume connects Left, Top, Bottom at 0 deg
+        
+        let basePorts = [];
+        switch(this.frame.name) {
+            case 0: basePorts = ['T', 'R', 'B', 'L']; break;
+            case 1: basePorts = ['L', 'B']; break;
+            case 2: basePorts = ['L', 'R']; break;
+            case 3: basePorts = ['L', 'T', 'B']; break;
         }
 
-        this.add.text(200, 450, "REFUEL COMPLETE!", {
-            fontSize: '24px',
-            fill: '#00ff00'
+        let shifts = Math.floor(this.angle / 90) % 4;
+        let portOrder = ['T', 'R', 'B', 'L'];
+        
+        return basePorts.map(p => {
+            let idx = portOrder.indexOf(p);
+            return portOrder[(idx + shifts) % 4];
         });
+    }
+
+    degrade() {
+        if (this.stateMachine.state === 'stable' && Math.random() > 0.8) {
+            this.stateMachine.transition('leaking');
+        } else if (this.stateMachine.state === 'leaking') {
+            this.stateMachine.transition('broken');
+        }
+    }
+}
+
+// --- States ---
+class StableState extends State {
+    enter(pipe) { pipe.clearTint(); }
+}
+class LeakingState extends State {
+    enter(pipe) { pipe.setTint(0xFFCC00); } 
+}
+class BrokenState extends State {
+    enter(pipe) { 
+        pipe.setTint(0x555555); 
+        pipe.disableInteractive();
     }
 }
