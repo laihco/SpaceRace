@@ -29,17 +29,83 @@ class Map extends Phaser.Scene {
         this.keys = this.input.keyboard.createCursorKeys();
         this.keys.Space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
+        this.createUI()
+        this.ui.setDepth(100)
+        console.log(this.ui)
+
+        this.time.addEvent({
+            delay: 600000, // 10 minutes
+            loop: true,
+            callback: () => {
+                this.triggerSleepWarning();
+            }
+        });
+
         // mini game scene testing purpose
         this.useButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     }
 
-    update() {
-        this.guyFSM.step()
+    update(time, delta) {
+        this.guyFSM.step();
 
         // mini game scene testing purpose
         if (Phaser.Input.Keyboard.JustDown(this.useButton))
         {
             this.scene.launch("trashScene");
         }
+
+        // example: slowly drain stats
+        this.fuel -= 0.01;
+        this.food -= 0.005;
+        this.water -= 0.008;
+
+        this.updateUI();
     }
+
+    createUI() {
+        // container that stays fixed to camera
+        this.ui = this.add.container(0, 0);
+        this.ui.setScrollFactor(0);
+
+        // stats
+        this.fuel = 100;
+        this.food = 100;
+        this.water = 100;
+
+        this.fuelText = this.add.text(10, 10, "Fuel: 100", { fontSize: '14px', fill: '#fff' });
+        this.foodText = this.add.text(10, 30, "Food: 100", { fontSize: '14px', fill: '#fff' });
+        this.waterText = this.add.text(10, 50, "Water: 100", { fontSize: '14px', fill: '#fff' });
+
+        this.ui.add([this.fuelText, this.foodText, this.waterText]);
+
+        this.sleepText = this.add.text(this.scale.width / 2, 20, "GO TO BED!", {
+            fontSize: '20px',
+            fill: '#ff0000'
+        }).setOrigin(0.5).setVisible(false);
+
+        this.ui.add(this.sleepText);
+
+        //compass
+        this.compass = this.add.circle(this.scale.width - 50, this.scale.height - 50, 30, 0x222222);
+        this.compassNeedle = this.add.line(this.scale.width - 50, this.scale.height - 50, 0, 0, 0, -20, 0xff0000)
+            .setLineWidth(3);
+
+        this.ui.add([this.compass, this.compassNeedle]);
+    }
+
+    updateUI() {
+        this.fuelText.setText("Fuel: " + Math.floor(this.fuel));
+        this.foodText.setText("Food: " + Math.floor(this.food));
+        this.waterText.setText("Water: " + Math.floor(this.water));
+    }
+
+    triggerSleepWarning() {
+        this.sleepText.setVisible(true);
+
+        // hide after 5 seconds
+        this.time.delayedCall(5000, () => {
+            this.sleepText.setVisible(false);
+        });
+    }
+
 }
