@@ -28,9 +28,18 @@ class Map extends Phaser.Scene {
         // setup keyboard input
         this.keys = this.input.keyboard.createCursorKeys();
         this.keys.Space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+        // mini game scene testing purpose
+        this.useButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     }
 
     update() {
         this.guyFSM.step()
+
+        // mini game scene testing purpose
+        if (Phaser.Input.Keyboard.JustDown(this.useButton))
+        {
+            this.scene.launch("trashScene");
+        }
     }
 }

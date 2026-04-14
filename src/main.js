@@ -8,6 +8,9 @@ let config = {
     type: Phaser.AUTO,
     width: 500,
     height: 500,
+    render: {
+        pixelArt: true
+    },
     physics: {
         default: "arcade",
         arcade: {
@@ -15,7 +18,7 @@ let config = {
             debugShowStaticBody: false
         }
     },
-    scene: [Load, Map]
+    scene: [Load, Map, Trash]
 }
 
 let game = new Phaser.Game(config)
