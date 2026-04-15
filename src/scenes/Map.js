@@ -40,10 +40,19 @@ class Map extends Phaser.Scene {
                 this.triggerSleepWarning();
             }
         });
+
+        // mini game scene testing purpose
+        this.useButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     }
 
     update(time, delta) {
         this.guyFSM.step();
+
+        // mini game scene testing purpose
+        if (Phaser.Input.Keyboard.JustDown(this.useButton))
+        {
+            this.scene.launch("trashScene");
+        }
 
         // example: slowly drain stats
         this.fuel -= 0.01;
