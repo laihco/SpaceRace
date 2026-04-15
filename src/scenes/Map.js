@@ -3,15 +3,29 @@ class Map extends Phaser.Scene {
         super('mapScene');
     }
 
-    preload()  {
+    preload() {
         this.load.path = "./assets/";
 
-        this.map = this.load.image('map', 'temp.jpeg')
+        this.load.spritesheet('map', 'bg_anim.png', {
+            frameWidth: 155,
+            frameHeight: 146
+        });
     }
 
     create() {
-        // Save the image to a variable when you add it
-        let bgMap = this.add.image(0, 0, 'map').setOrigin(0).setDepth(1).setScale(0.5);
+        this.anims.create({
+            key: 'map_anim',
+            frames: this.anims.generateFrameNumbers('map', { start: 0, end: 3 }),
+            frameRate: 7,
+            repeat: -1
+        });
+
+        let bgMap = this.add.sprite(0, 0, 'map')
+            .setOrigin(0)
+            .setDepth(1)
+            .setScale(5);
+
+        bgMap.play('map_anim');
 
         // temp player sprite
         this.ace = new Guy(this, 400, 400, 'ace', 0, 'down', true); // Shifted spawn so he isn't stuck outside bounds
@@ -63,6 +77,7 @@ class Map extends Phaser.Scene {
     }
 
     createUI() {
+
         // container that stays fixed to camera
         this.ui = this.add.container(0, 0);
         this.ui.setScrollFactor(0);
@@ -72,13 +87,20 @@ class Map extends Phaser.Scene {
         this.food = 100;
         this.water = 100;
 
-        this.fuelText = this.add.text(10, 10, "Fuel: 100", { fontSize: '14px', fill: '#fff' });
-        this.foodText = this.add.text(10, 30, "Food: 100", { fontSize: '14px', fill: '#fff' });
-        this.waterText = this.add.text(10, 50, "Water: 100", { fontSize: '14px', fill: '#fff' });
+        // background box behind stats
+        this.uiBg = this.add.rectangle(5, 5, 150, 70, 0x000000, 0.85)
+            .setOrigin(0);
+
+        this.ui.add(this.uiBg);
+
+        this.fuelText = this.add.text(10, 10, "Fuel: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
+        this.foodText = this.add.text(10, 30, "Food: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
+        this.waterText = this.add.text(10, 50, "Water: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
 
         this.ui.add([this.fuelText, this.foodText, this.waterText]);
 
         this.sleepText = this.add.text(this.scale.width / 2, 20, "GO TO BED!", {
+            fontFamily: 'spaceranger',
             fontSize: '20px',
             fill: '#ff0000'
         }).setOrigin(0.5).setVisible(false);

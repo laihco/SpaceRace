@@ -6,6 +6,18 @@
     <title>Space Race</title>
 
 
+        <!-- Loading custom font -->
+        <script>
+            const newFontFace = new FontFace('spaceranger', 'url(./assets/fonts/SpaceRangerTitleItalic-BLWjl.otf)');
+            
+            newFontFace.load().then((loadedFont) => {
+                document.fonts.add(loadedFont);
+                console.log('Font loaded successfully!');
+            }).catch((error) => {
+                console.error('Error loading font:', error);
+            });
+        </script>
+
 
     <script src="./lib/phaser.js"></script>
     <script src="./lib/StateMachine.js"></script>
