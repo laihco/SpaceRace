@@ -12,7 +12,13 @@ class Load extends Phaser.Scene {
         })
 
         //load the map
-        this.load.image('map', 'temp.jpeg')
+        this.load.spritesheet('map', 'bg_anim.png', { frameWidth: 155, frameHeight: 146 })
+
+        //load the pipes
+        this.load.spritesheet('pipe', 'pipes.png', {
+            frameWidth: 32,
+            frameHeight: 32
+        })
     }
 
     create() {

@@ -6,8 +6,9 @@
 
 let config = {
     type: Phaser.AUTO,
-    width: 500,
-    height: 500,
+    width: 772,
+    height: 729,
+    pixelArt: true,
     physics: {
         default: "arcade",
         arcade: {
