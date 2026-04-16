@@ -57,15 +57,23 @@ class Map extends Phaser.Scene {
 
         // mini game scene testing purpose
         this.useButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+        this.navButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N); // navigation minigame key
     }
 
     update(time, delta) {
         this.guyFSM.step();
 
         // mini game scene testing purpose
-        if (Phaser.Input.Keyboard.JustDown(this.useButton))
+        if (Phaser.Input.Keyboard.JustDown(this.useButton) && !this.scene.isActive('trashScene'))
         {
+            this.scene.pause();
             this.scene.launch("trashScene");
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(this.navButton) && !this.scene.isActive('navigationScene'))
+        {
+            this.scene.pause();
+            this.scene.launch("navigationScene");
         }
 
         // example: slowly drain stats
@@ -113,6 +121,7 @@ class Map extends Phaser.Scene {
             .setLineWidth(3);
 
         this.ui.add([this.compass, this.compassNeedle]);
+
     }
 
     updateUI() {
