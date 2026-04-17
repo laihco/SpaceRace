@@ -69,44 +69,34 @@ class Map extends Phaser.Scene {
         this.scheduleNextTransmission();
 
         // mini game scene testing purpose
-<<<<<<< HEAD
-        this.useButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-        this.navButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N); // navigation minigame key
-=======
         this.trashGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
         this.refuelGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
->>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
+        this.farmKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     }
 
     update(time, delta) {
 
         // mini game scene testing purpose
-<<<<<<< HEAD
-        if (Phaser.Input.Keyboard.JustDown(this.useButton) && !this.scene.isActive('trashScene'))
-=======
         if (Phaser.Input.Keyboard.JustDown(this.trashGame))
->>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
         {
             this.scene.pause();
             this.scene.launch("trashScene");
         }
-
-<<<<<<< HEAD
-        if (Phaser.Input.Keyboard.JustDown(this.navButton) && !this.scene.isActive('navigationScene'))
-        {
-            this.scene.pause();
-            this.scene.launch("navigationScene");
+        if (Phaser.Input.Keyboard.JustDown(this.farmKey)) {
+            this.scene.sleep('mapScene');
+            if (this.scene.isSleeping('farm')) {
+                this.scene.wake('farm');
+            } else {
+                this.scene.launch('farm');
+            }
         }
 
-        // example: slowly drain stats
-=======
         if (Phaser.Input.Keyboard.JustDown(this.refuelGame))
         {
             this.scene.launch("pressureScene");
         }
 
         // slowly draining
->>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
         this.fuel -= 0.01;
         this.trash += 0.01;
         this.food -= 0.008;
@@ -144,17 +134,6 @@ class Map extends Phaser.Scene {
         }).setOrigin(0.5).setVisible(false);
 
         this.ui.add(this.sleepText);
-<<<<<<< HEAD
-
-        //compass
-        this.compass = this.add.circle(this.scale.width - 50, this.scale.height - 50, 30, 0x222222);
-        this.compassNeedle = this.add.line(this.scale.width - 50, this.scale.height - 50, 0, 0, 0, -20, 0xff0000)
-            .setLineWidth(3);
-
-        this.ui.add([this.compass, this.compassNeedle]);
-
-=======
->>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
     }
 
     updateUI() {
@@ -172,9 +151,6 @@ class Map extends Phaser.Scene {
         });
     }
 
-<<<<<<< HEAD
-}
-=======
     scheduleNextTransmission() {
         let delay = Phaser.Math.Between(25000, 35000);
 
@@ -208,4 +184,3 @@ class Map extends Phaser.Scene {
     }
 
 }
->>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
