@@ -6,7 +6,7 @@ class PressureScene extends Phaser.Scene {
     init() {
         this.gridSize = 6;
         this.tileSize = 64;
-        this.timer = 30;
+        this.timer = 10;
         this.isLocked = false;
         this.pipeGrid = [];
     }
