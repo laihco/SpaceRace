@@ -42,16 +42,22 @@ class Map extends Phaser.Scene {
         });
 
         // mini game scene testing purpose
-        this.useButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+        this.emptyButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+        this.craftButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
     }
 
     update(time, delta) {
         this.guyFSM.step();
 
         // mini game scene testing purpose
-        if (Phaser.Input.Keyboard.JustDown(this.useButton))
+        if (Phaser.Input.Keyboard.JustDown(this.emptyButton))
         {
             this.scene.launch("trashScene");
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(this.craftButton))
+        {
+            this.scene.launch("craftScene");
         }
 
         // example: slowly drain stats

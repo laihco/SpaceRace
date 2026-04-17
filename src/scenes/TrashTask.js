@@ -25,8 +25,8 @@ class Trash extends Phaser.Scene
         this.add.rectangle(0, 0, game.config.width, game.config.height, 0x000000, 0.5).setOrigin(0);
 
         // mini game scene background
-        this.add.rectangle(game.config.width/2, game.config.height/2, 350, 350, 0x405080).setOrigin(0.5);
-        this.add.rectangle(game.config.width/2 - 50, game.config.height/2, 250, 350, 0xa6a6a6).setOrigin(0.5);
+        this.add.rectangle(centerX, centerY, 350, 350, 0x405080).setOrigin(0.5);
+        this.add.rectangle(centerX - 50, centerY, 250, 350, 0xa6a6a6).setOrigin(0.5);
 
         // mask
         const mask = this.add.rectangle(game.config.width/2 - 50, game.config.height/2, 250, 350, 0x000000)
@@ -76,7 +76,6 @@ class Trash extends Phaser.Scene
 
         for (let i=0; i < 10; i++)
         {
-            // let texture = Phaser.Math.RND.pick(['garbage1', 'garbage2']);
             let x = Phaser.Math.Between(centerX-160, centerX+50);
             let y = Phaser.Math.Between(centerY-150, centerY+100);
 
