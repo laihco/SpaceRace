@@ -168,7 +168,7 @@ class Map extends Phaser.Scene {
         });
     }
     scheduleNextTransmission() {
-        let delay = Phaser.Math.Between(25000, 35000);
+        let delay = Phaser.Math.Between(10000, 15000);
 
         this.time.delayedCall(delay, () => {
             this.showTransmission();
