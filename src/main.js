@@ -18,11 +18,7 @@ let config = {
             debugShowStaticBody: false
         }
     },
-<<<<<<< HEAD
-    scene: [Load, Map, Trash, NavigationTask]
-=======
     scene: [Load, Map, Trash, PressureScene]
->>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
 }
 
 let game = new Phaser.Game(config)
