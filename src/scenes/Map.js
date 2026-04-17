@@ -125,7 +125,7 @@ class Map extends Phaser.Scene {
         this.food = 50;
 
         // background box behind stats
-        this.uiBg = this.add.rectangle(5, 5, 150, 70, 0x000000, 0.85)
+        this.uiBg = this.add.rectangle(5, 5, 480, 70, 0x000000, 0.85)
             .setOrigin(0);
 
         this.ui.add(this.uiBg);
@@ -134,7 +134,12 @@ class Map extends Phaser.Scene {
         this.trashText = this.add.text(10, 30, "trash: 0", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
         this.foodText = this.add.text(10, 50, "food: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
 
-        this.ui.add([this.fuelText, this.trashText, this.foodText]);
+        this.fuelButton = this.add.text(300, 10, "Refuel (R)", { fontFamily: 'spaceranger', fontSize: '14px', fill: '#fff' })
+        this.trashButton = this.add.text(300, 25, "Empty Trash (E)", { fontFamily: 'spaceranger', fontSize: '14px', fill: '#fff' })
+        this.navButtonText = this.add.text(300, 40, "Navigation (N)", { fontFamily: 'spaceranger', fontSize: '14px', fill: '#fff' })
+        this.farmButton = this.add.text(300, 55, "Farm (F)", { fontFamily: 'spaceranger', fontSize: '14px', fill: '#fff' })
+
+        this.ui.add([this.fuelText, this.trashText, this.foodText, this.fuelButton, this.trashButton, this.navButtonText, this.farmButton]);
 
         this.sleepText = this.add.text(this.scale.width / 2, 20, "GO TO BED!", {
             fontFamily: 'spaceranger',
