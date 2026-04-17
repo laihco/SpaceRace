@@ -10,6 +10,8 @@ class Map extends Phaser.Scene {
             frameWidth: 155,
             frameHeight: 146
         });
+
+        this.load.json('transmissions', 'transmissions.json');
     }
 
     create() {
@@ -23,25 +25,12 @@ class Map extends Phaser.Scene {
         let bgMap = this.add.sprite(0, 0, 'map')
             .setOrigin(0)
             .setDepth(1)
-            .setScale(5);
+            .setScale(3.3);
 
         bgMap.play('map_anim');
 
-        // temp player sprite
-        this.ace = new Guy(this, 400, 400, 'ace', 0, 'down', true); // Shifted spawn so he isn't stuck outside bounds
-        this.ace.setDepth(5);
 
-        this.guyFSM = this.ace.scene.guyFSM;
-
-        // Automatically set bounds to start at 0,0 and match the image's exact width and height!
-        this.cameras.main.setBounds(0, 0, bgMap.width, bgMap.height);
-        this.physics.world.setBounds(0, 0, bgMap.width, bgMap.height); 
-        
-        this.cameras.main.startFollow(this.ace, false, 0.5, 0.5);
-
-        // setup keyboard input
         this.keys = this.input.keyboard.createCursorKeys();
-        this.keys.Space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         this.createUI()
         this.ui.setDepth(100)
@@ -55,21 +44,54 @@ class Map extends Phaser.Scene {
             }
         });
 
+        // load transmission data
+        this.transmissions = this.cache.json.get('transmissions').transmissions;
+
+        this.transmissionText = this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            "",
+            {
+                fontFamily: 'spaceranger',
+                fontSize: '22px',
+                color: '#00ff00',
+                stroke: '#000000',
+                strokeThickness: 3,
+                align: 'center',
+                wordWrap: { width: 500 }
+            }
+        )
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(200)
+        .setAlpha(0);
+
+        this.scheduleNextTransmission();
+
         // mini game scene testing purpose
+<<<<<<< HEAD
         this.useButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
         this.navButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N); // navigation minigame key
+=======
+        this.trashGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+        this.refuelGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+>>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
     }
 
     update(time, delta) {
-        this.guyFSM.step();
 
         // mini game scene testing purpose
+<<<<<<< HEAD
         if (Phaser.Input.Keyboard.JustDown(this.useButton) && !this.scene.isActive('trashScene'))
+=======
+        if (Phaser.Input.Keyboard.JustDown(this.trashGame))
+>>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
         {
             this.scene.pause();
             this.scene.launch("trashScene");
         }
 
+<<<<<<< HEAD
         if (Phaser.Input.Keyboard.JustDown(this.navButton) && !this.scene.isActive('navigationScene'))
         {
             this.scene.pause();
@@ -77,9 +99,17 @@ class Map extends Phaser.Scene {
         }
 
         // example: slowly drain stats
+=======
+        if (Phaser.Input.Keyboard.JustDown(this.refuelGame))
+        {
+            this.scene.launch("pressureScene");
+        }
+
+        // slowly draining
+>>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
         this.fuel -= 0.01;
-        this.food -= 0.005;
-        this.water -= 0.008;
+        this.trash += 0.01;
+        this.food -= 0.008;
 
         this.updateUI();
     }
@@ -91,9 +121,9 @@ class Map extends Phaser.Scene {
         this.ui.setScrollFactor(0);
 
         // stats
-        this.fuel = 100;
-        this.food = 100;
-        this.water = 100;
+        this.fuel = 50;
+        this.trash = 0;
+        this.food = 50;
 
         // background box behind stats
         this.uiBg = this.add.rectangle(5, 5, 150, 70, 0x000000, 0.85)
@@ -102,10 +132,10 @@ class Map extends Phaser.Scene {
         this.ui.add(this.uiBg);
 
         this.fuelText = this.add.text(10, 10, "Fuel: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
-        this.foodText = this.add.text(10, 30, "Food: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
-        this.waterText = this.add.text(10, 50, "Water: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
+        this.trashText = this.add.text(10, 30, "trash: 0", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
+        this.foodText = this.add.text(10, 50, "food: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
 
-        this.ui.add([this.fuelText, this.foodText, this.waterText]);
+        this.ui.add([this.fuelText, this.trashText, this.foodText]);
 
         this.sleepText = this.add.text(this.scale.width / 2, 20, "GO TO BED!", {
             fontFamily: 'spaceranger',
@@ -114,6 +144,7 @@ class Map extends Phaser.Scene {
         }).setOrigin(0.5).setVisible(false);
 
         this.ui.add(this.sleepText);
+<<<<<<< HEAD
 
         //compass
         this.compass = this.add.circle(this.scale.width - 50, this.scale.height - 50, 30, 0x222222);
@@ -122,12 +153,14 @@ class Map extends Phaser.Scene {
 
         this.ui.add([this.compass, this.compassNeedle]);
 
+=======
+>>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
     }
 
     updateUI() {
         this.fuelText.setText("Fuel: " + Math.floor(this.fuel));
-        this.foodText.setText("Food: " + Math.floor(this.food));
-        this.waterText.setText("Water: " + Math.floor(this.water));
+        this.trashText.setText("trash: " + Math.floor(this.trash));
+        this.foodText.setText("food: " + Math.floor(this.food));
     }
 
     triggerSleepWarning() {
@@ -139,4 +172,40 @@ class Map extends Phaser.Scene {
         });
     }
 
+<<<<<<< HEAD
 }
+=======
+    scheduleNextTransmission() {
+        let delay = Phaser.Math.Between(25000, 35000);
+
+        this.time.delayedCall(delay, () => {
+            this.showTransmission();
+            this.scheduleNextTransmission();
+        });
+    }
+
+    showTransmission() {
+        let msg = Phaser.Utils.Array.GetRandom(this.transmissions);
+
+        this.transmissionText.setText(msg);
+
+        // fade in
+        this.tweens.add({
+            targets: this.transmissionText,
+            alpha: 1,
+            duration: 1000,
+            ease: 'Power2'
+        });
+
+        this.time.delayedCall(8000, () => {
+            this.tweens.add({
+                targets: this.transmissionText,
+                alpha: 0,
+                duration: 1000,
+                ease: 'Power2'
+            });
+        });
+    }
+
+}
+>>>>>>> 54c46fd (updated fuel game to match, connected both minigames to main hud display)
