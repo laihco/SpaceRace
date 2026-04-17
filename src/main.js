@@ -18,7 +18,11 @@ let config = {
             debugShowStaticBody: false
         }
     },
+<<<<<<< ours
     scene: [Load, Map, Trash, PressureScene]
+=======
+    scene: [Load, Map, Trash, PressureScene, Farm]
+>>>>>>> theirs
 }
 
 let game = new Phaser.Game(config)

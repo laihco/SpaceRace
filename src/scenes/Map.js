@@ -72,12 +72,13 @@ class Map extends Phaser.Scene {
         this.navButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N); // navigation minigame key
         this.trashGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
         this.refuelGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        this.farmKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     }
 
     update(time, delta) {
 
         // mini game scene testing purpose
-        if (Phaser.Input.Keyboard.JustDown(this.trashGame) && !this.scene.isActive('trashScene'))
+        if (Phaser.Input.Keyboard.JustDown(this.trashGame))
         {
             this.scene.pause();
             this.scene.launch("trashScene");
@@ -90,6 +91,15 @@ class Map extends Phaser.Scene {
         }
 
         // example: slowly drain stats
+        if (Phaser.Input.Keyboard.JustDown(this.farmKey)) {
+            this.scene.sleep('mapScene');
+            if (this.scene.isSleeping('farm')) {
+                this.scene.wake('farm');
+            } else {
+                this.scene.launch('farm');
+            }
+        }
+
         if (Phaser.Input.Keyboard.JustDown(this.refuelGame))
         {
             this.scene.launch("pressureScene");
@@ -190,4 +200,3 @@ class Map extends Phaser.Scene {
     }
 
 }
-
