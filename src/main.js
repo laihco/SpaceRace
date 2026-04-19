@@ -18,7 +18,7 @@ let config = {
             debugShowStaticBody: false
         }
     },
-    scene: [Load, Map, Trash, PressureScene, Farm, NavigationTask]
+    scene: [Load, Map, Trash, PressureScene, Farm, PlanetSelect, NavigationTask, GameOver]
 }
 
 let game = new Phaser.Game(config)
