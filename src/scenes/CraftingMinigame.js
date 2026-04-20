@@ -16,11 +16,23 @@ class Craft extends Phaser.Scene
         this.load.image('motherboard', 'motherboard.png');
         this.load.image('meteorite', 'meteorite.png');
         this.load.image('ironOre', 'iron_ore.png');
+        this.load.image('hullPatch', 'hull_patch.png');
     }
 
     init()
     {
-
+        this.recipes = [
+            {
+                name: 'Motherboard',
+                ingredients: { 'circuitComponents': 1, 'copperOre': 2 },
+                result: 'motherboard'
+            },
+            {
+                name: 'Hull Patch',
+                ingredients: { 'ironOre': 4 },
+                result: 'hullPatch'
+            }
+        ];
     }
 
     create() 
@@ -110,9 +122,14 @@ class Craft extends Phaser.Scene
         */
 
         // spawn debris
-        const items = ['copperNode', 'meteorite', 'circuitComponents'];
+        // alter the spawn rate
+        const items = [
+            'copperNode', 'copperNode', 'copperNode', 
+            'meteorite', 'meteorite', 'meteorite', 
+            'circuitComponents'
+        ];
         
-        for (let i=0; i < 5; i++)
+        for (let i=0; i < 8; i++)
         {
             let x = Phaser.Math.Between(centerX + 162, centerX + 184);
             let y = 120 - (i*80);
@@ -134,6 +151,9 @@ class Craft extends Phaser.Scene
             gameObject.body.setAllowGravity(false);
             gameObject.body.enable = true;
             gameObject.setVelocity(0);
+
+            gameObject.setData('currentSlot', null);
+            this.checkCrafting();
 
             /* for testing purpose
             this.debrisGroup.getChildren().forEach(debris => {
@@ -159,9 +179,15 @@ class Craft extends Phaser.Scene
             gameObject.setVelocity(0);
             gameObject.body.enable = false;
 
+            gameObject.setData('currentSlot', dropZone);
+
             if (dropZone.getData('isProcessor')) {
                 this.processItem(gameObject);
                 console.log("processing " + gameObject.type);
+            }
+            else if (dropZone.getData('isCraftingSlot')) {
+                this.checkCrafting();
+                console.log("ready for crafting " + gameObject.type);
             }
         });
         
@@ -201,5 +227,89 @@ class Craft extends Phaser.Scene
             result.body.enable = false;
 
         });
+    }
+
+    checkCrafting() {
+        // crafting slot list (things that are in the slot grid currently)
+        let currentIngredients = {};
+        let foundMatch = false;
+
+        this.debrisGroup.getChildren().forEach(item => {
+            let slot = item.getData('currentSlot');
+            if (slot && slot.getData('isCraftingSlot')) {
+                let type = item.getData('type');
+                currentIngredients[type] = (currentIngredients[type] || 0) + 1;
+            }
+        });
+
+        this.recipes.forEach(recipe => {
+            if (this.isMatch(currentIngredients, recipe.ingredients)) {
+                console.log("Match found: " + recipe.name);
+                this.showCraftingResult(recipe.result);
+                foundMatch = true;
+            }
+        });
+
+        // kill preview item if no crafting recipe matches (this happens when the player lift one of the items in match case)
+        if (!foundMatch && this.previewItem) {
+            this.previewItem.destroy();
+            this.previewItem = null;
+        }
+
+        console.log(currentIngredients);
+    }
+
+    // compare crafting slot list and recipe list
+    isMatch(have, need) {
+        // perfect match (this won't eat the irrelevant item in the crafting grid)
+        if (Object.keys(have).length !== Object.keys(need).length) {
+            return false;
+        }
+        return Object.keys(need).every(key => have[key] === need[key]);
+    }
+
+    showCraftingResult(resultType) {
+        // check if there's a preview item in the result slot
+        if (this.previewItem) {
+            this.previewItem.destroy();
+        }
+
+        // create temporary preview
+        this.previewItem = this.add.image(centerX + 80, centerY - 65, resultType);
+        this.previewItem.setScale(2);
+        this.previewItem.setAlpha(0.5);
+        
+        this.previewItem.setInteractive();
+        this.previewItem.on('pointerdown', () => {
+            this.finalizeCraft(resultType);
+        });
+    }
+
+    finalizeCraft(resultType) {
+        // remove crafting items in the slots
+        // [...] operator that clone the array, which solve the bug (assisted by AI)
+        [...this.debrisGroup.getChildren()].forEach(item => {
+            let slot = item.getData('currentSlot');
+            if (slot && slot.getData('isCraftingSlot')) {
+                item.destroy(); 
+            }
+        });
+
+        // remove temporary preview
+        if (this.previewItem) {
+            this.previewItem.destroy();
+            this.previewItem = null;
+        }
+
+        // actually spawn the real crafting result
+        let finalItem = this.debrisGroup.create(centerX + 80, centerY - 65, resultType);
+        finalItem.setScale(2);
+        finalItem.setInteractive({ draggable: true });
+        finalItem.setData('type', resultType);
+        
+        finalItem.body.setAllowGravity(false);
+        finalItem.body.enable = false;
+
+        console.log("Crafted: " + resultType);
     }
 }
