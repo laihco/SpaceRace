@@ -6,14 +6,29 @@
     <title>Space Race</title>
 
 
+        <!-- Loading custom font -->
+        <script>
+            const newFontFace = new FontFace('spaceranger', 'url(./assets/fonts/SpaceRangerTitleItalic-BLWjl.otf)');
+            
+            newFontFace.load().then((loadedFont) => {
+                document.fonts.add(loadedFont);
+                console.log('Font loaded successfully!');
+            }).catch((error) => {
+                console.error('Error loading font:', error);
+            });
+        </script>
+
 
     <script src="./lib/phaser.js"></script>
     <script src="./lib/StateMachine.js"></script>
     <script src="./src/prefabs/Guy.js"></script>
     <script src="./src/scenes/Load.js"></script>
-    <script src="./src/scenes/Map.js"></script>
     <script src="./src/scenes/TrashTask.js"></script>
     <script src="./src/scenes/CraftingMinigame.js"></script>
+    <script src="./src/scenes/NavigationTask.js"></script>
+    <script src="./src/scenes/FuelMinigame.js"></script>
+    <script src="./src/scenes/Farm.js"></script>
+    <script src="./src/scenes/Map.js"></script>
     <script src="./src/main.js"></script>
 </head>
 <body>

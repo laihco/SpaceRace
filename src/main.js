@@ -19,7 +19,7 @@ let config = {
             debugShowStaticBody: false
         }
     },
-    scene: [Load, Map, Trash, Craft]
+    scene: [Load, Map, Trash, Craft, PressureScene, Farm, NavigationTask]
 }
 
 let game = new Phaser.Game(config)

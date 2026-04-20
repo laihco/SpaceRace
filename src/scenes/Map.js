@@ -3,31 +3,34 @@ class Map extends Phaser.Scene {
         super('mapScene');
     }
 
-    preload()  {
+    preload() {
         this.load.path = "./assets/";
 
-        this.map = this.load.image('map', 'temp.jpeg')
+        this.load.spritesheet('map', 'bg_anim.png', {
+            frameWidth: 155,
+            frameHeight: 146
+        });
+
+        this.load.json('transmissions', 'transmissions.json');
     }
 
     create() {
-        // Save the image to a variable when you add it
-        let bgMap = this.add.image(0, 0, 'map').setOrigin(0).setDepth(1).setScale(0.5);
+        this.anims.create({
+            key: 'map_anim',
+            frames: this.anims.generateFrameNumbers('map', { start: 0, end: 3 }),
+            frameRate: 7,
+            repeat: -1
+        });
 
-        // temp player sprite
-        this.ace = new Guy(this, 400, 400, 'ace', 0, 'down', true); // Shifted spawn so he isn't stuck outside bounds
-        this.ace.setDepth(5);
+        let bgMap = this.add.sprite(0, 0, 'map')
+            .setOrigin(0)
+            .setDepth(1)
+            .setScale(3.3);
 
-        this.guyFSM = this.ace.scene.guyFSM;
+        bgMap.play('map_anim');
 
-        // Automatically set bounds to start at 0,0 and match the image's exact width and height!
-        this.cameras.main.setBounds(0, 0, bgMap.width, bgMap.height);
-        this.physics.world.setBounds(0, 0, bgMap.width, bgMap.height); 
-        
-        this.cameras.main.startFollow(this.ace, false, 0.5, 0.5);
 
-        // setup keyboard input
         this.keys = this.input.keyboard.createCursorKeys();
-        this.keys.Space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         this.createUI()
         this.ui.setDepth(100)
@@ -41,50 +44,112 @@ class Map extends Phaser.Scene {
             }
         });
 
+        // load transmission data
+        this.transmissions = this.cache.json.get('transmissions').transmissions;
+
+        this.transmissionText = this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            "",
+            {
+                fontFamily: 'spaceranger',
+                fontSize: '22px',
+                color: '#00ff00',
+                stroke: '#000000',
+                strokeThickness: 3,
+                align: 'center',
+                wordWrap: { width: 500 }
+            }
+        )
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(200)
+        .setAlpha(0);
+
+        this.scheduleNextTransmission();
+
         // mini game scene testing purpose
-        this.emptyButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-        this.craftButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+        this.navButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N); // navigation minigame key
+        this.trashGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+        this.craftGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+        this.refuelGame = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        this.farmKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
     }
 
     update(time, delta) {
-        this.guyFSM.step();
 
         // mini game scene testing purpose
-        if (Phaser.Input.Keyboard.JustDown(this.emptyButton))
+        if (Phaser.Input.Keyboard.JustDown(this.trashGame))
         {
+            this.scene.pause();
             this.scene.launch("trashScene");
         }
 
         if (Phaser.Input.Keyboard.JustDown(this.craftButton))
         {
+            this.scene.pause();
             this.scene.launch("craftScene");
         }
 
+        if (Phaser.Input.Keyboard.JustDown(this.navButton) && !this.scene.isActive('navigationScene'))
+        {
+            this.scene.pause();
+            this.scene.launch("navigationScene");
+        }
+
         // example: slowly drain stats
+        if (Phaser.Input.Keyboard.JustDown(this.farmKey)) {
+            this.scene.sleep('mapScene');
+            if (this.scene.isSleeping('farm')) {
+                this.scene.wake('farm');
+            } else {
+                this.scene.launch('farm');
+            }
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(this.refuelGame))
+        {
+            this.scene.launch("pressureScene");
+        }
+
+        // slowly draining
         this.fuel -= 0.01;
-        this.food -= 0.005;
-        this.water -= 0.008;
+        this.trash += 0.01;
+        this.food -= 0.008;
 
         this.updateUI();
     }
 
     createUI() {
+
         // container that stays fixed to camera
         this.ui = this.add.container(0, 0);
         this.ui.setScrollFactor(0);
 
         // stats
-        this.fuel = 100;
-        this.food = 100;
-        this.water = 100;
+        this.fuel = 50;
+        this.trash = 0;
+        this.food = 50;
 
-        this.fuelText = this.add.text(10, 10, "Fuel: 100", { fontSize: '14px', fill: '#fff' });
-        this.foodText = this.add.text(10, 30, "Food: 100", { fontSize: '14px', fill: '#fff' });
-        this.waterText = this.add.text(10, 50, "Water: 100", { fontSize: '14px', fill: '#fff' });
+        // background box behind stats
+        this.uiBg = this.add.rectangle(5, 5, 480, 70, 0x000000, 0.85)
+            .setOrigin(0);
 
-        this.ui.add([this.fuelText, this.foodText, this.waterText]);
+        this.ui.add(this.uiBg);
+
+        this.fuelText = this.add.text(10, 10, "Fuel: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
+        this.trashText = this.add.text(10, 30, "trash: 0", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
+        this.foodText = this.add.text(10, 50, "food: 100", { fontFamily: 'spaceranger', fontSize: '18px', fill: '#fff' });
+
+        this.fuelButton = this.add.text(300, 10, "Refuel (R)", { fontFamily: 'spaceranger', fontSize: '14px', fill: '#fff' })
+        this.trashButton = this.add.text(300, 25, "Empty Trash (E)", { fontFamily: 'spaceranger', fontSize: '14px', fill: '#fff' })
+        this.navButtonText = this.add.text(300, 40, "Navigation (N)", { fontFamily: 'spaceranger', fontSize: '14px', fill: '#fff' })
+        this.farmButton = this.add.text(300, 55, "Farm (F)", { fontFamily: 'spaceranger', fontSize: '14px', fill: '#fff' })
+
+        this.ui.add([this.fuelText, this.trashText, this.foodText, this.fuelButton, this.trashButton, this.navButtonText, this.farmButton]);
 
         this.sleepText = this.add.text(this.scale.width / 2, 20, "GO TO BED!", {
+            fontFamily: 'spaceranger',
             fontSize: '20px',
             fill: '#ff0000'
         }).setOrigin(0.5).setVisible(false);
@@ -97,12 +162,13 @@ class Map extends Phaser.Scene {
             .setLineWidth(3);
 
         this.ui.add([this.compass, this.compassNeedle]);
+
     }
 
     updateUI() {
         this.fuelText.setText("Fuel: " + Math.floor(this.fuel));
-        this.foodText.setText("Food: " + Math.floor(this.food));
-        this.waterText.setText("Water: " + Math.floor(this.water));
+        this.trashText.setText("trash: " + Math.floor(this.trash));
+        this.foodText.setText("food: " + Math.floor(this.food));
     }
 
     triggerSleepWarning() {
@@ -111,6 +177,37 @@ class Map extends Phaser.Scene {
         // hide after 5 seconds
         this.time.delayedCall(5000, () => {
             this.sleepText.setVisible(false);
+        });
+    }
+    scheduleNextTransmission() {
+        let delay = Phaser.Math.Between(10000, 15000);
+
+        this.time.delayedCall(delay, () => {
+            this.showTransmission();
+            this.scheduleNextTransmission();
+        });
+    }
+
+    showTransmission() {
+        let msg = Phaser.Utils.Array.GetRandom(this.transmissions);
+
+        this.transmissionText.setText(msg);
+
+        // fade in
+        this.tweens.add({
+            targets: this.transmissionText,
+            alpha: 1,
+            duration: 1000,
+            ease: 'Power2'
+        });
+
+        this.time.delayedCall(8000, () => {
+            this.tweens.add({
+                targets: this.transmissionText,
+                alpha: 0,
+                duration: 1000,
+                ease: 'Power2'
+            });
         });
     }
 

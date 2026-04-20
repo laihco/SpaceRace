@@ -45,6 +45,12 @@ class Trash extends Phaser.Scene
         redButton.on('pointerdown', () => {
             console.log("red button pressed, dumping garbage...");
             this.emptyGarbage();
+
+            // reduce trash in map scene by 20
+            const mapScene = this.scene.get('mapScene');
+            if (mapScene) {
+                mapScene.trash = Math.max(0, mapScene.trash - 20);
+            }
         })
 
         // collision walls for garbage container
