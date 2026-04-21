@@ -3,8 +3,8 @@ class NavigationTask extends Phaser.Scene {
         super('navigationScene');
     }
 
-    init() {
-        // target answers for each valve
+    init(data) {
+        // target valve angles
         this.targetAngles = [90, 180, 270];
         // current valve positions
         this.currentAngles = [0, 0, 0];
@@ -12,6 +12,9 @@ class NavigationTask extends Phaser.Scene {
         this.isSolved = false;
         this.feedbackText = null;
         this.photoLayers = [];
+        this.selectedPlanet = (data && data.planet)
+            ? data.planet
+            : { id: 'unknown', name: 'UNKNOWN', color: 0x00ff88, distance: '???' };
     }
 
     create() {
@@ -21,9 +24,19 @@ class NavigationTask extends Phaser.Scene {
         // main minigame box
         this.add.rectangle(centerX, centerY, 380, 360, 0x000000).setStrokeStyle(2, 0x00ff88);
 
-        this.add.text(centerX, 82, 'Develop Photo', {
+        const closeButton = this.add.text(415, 78, 'X', {
             fontFamily: 'Arial',
-            fontSize: '24px',
+            fontSize: '18px',
+            color: '#39FF14'
+        }).setInteractive({ useHandCursor: true });
+
+        closeButton.on('pointerdown', () => {
+            this.closeMinigame();
+        });
+
+        this.add.text(centerX, 82, `COURSE: ${this.selectedPlanet.name}`, {
+            fontFamily: 'Arial',
+            fontSize: '22px',
             color: '#39FF14'
         }).setOrigin(0.5);
 
@@ -33,19 +46,7 @@ class NavigationTask extends Phaser.Scene {
             color: '#39FF14'
         }).setOrigin(0.5);
 
-        const closeButton = this.add.text(415, 78, 'X', {
-            fontFamily: 'Arial',
-            fontSize: '18px',
-            color: '#39FF14'
-        }).setInteractive({ useHandCursor: true });
-
-        // close minigame
-        closeButton.on('pointerdown', () => {
-            this.closeMinigame();
-        });
-
         const dialX = [140, 250, 360];
-
         for (let i = 0; i < 3; i++) {
             this.createDial(dialX[i], 190, i);
         }
@@ -53,7 +54,7 @@ class NavigationTask extends Phaser.Scene {
         // image area
         this.createPhoto();
 
-        this.feedbackText = this.add.text(centerX, 392, 'Open the valves to develop the image', {
+        this.feedbackText = this.add.text(centerX, 392, 'Open the valves to lock the course', {
             fontFamily: 'Arial',
             fontSize: '14px',
             color: '#39FF14'
@@ -145,17 +146,18 @@ class NavigationTask extends Phaser.Scene {
         });
 
         const solved = this.currentAngles.every((angle, index) => angle === this.targetAngles[index]);
-
-        if (!solved) {
-            return;
-        }
+        if (!solved) return;
 
         this.isSolved = true;
-        this.feedbackText.setText('PHOTO DEVELOPED');
+        this.feedbackText.setText(`COURSE LOCKED · JUMPING TO ${this.selectedPlanet.name}`);
         this.feedbackText.setColor('#39FF14');
 
-        // close after success
-        this.time.delayedCall(1000, () => {
+        const mapScene = this.scene.get('mapScene');
+        if (mapScene && typeof mapScene.startTravel === 'function') {
+            mapScene.startTravel(this.selectedPlanet);
+        }
+
+        this.time.delayedCall(1200, () => {
             this.closeMinigame();
         });
     }

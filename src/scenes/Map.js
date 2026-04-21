@@ -22,12 +22,12 @@ class Map extends Phaser.Scene {
             repeat: -1
         });
 
-        let bgMap = this.add.sprite(0, 0, 'map')
+        this.bgMap = this.add.sprite(0, 0, 'map')
             .setOrigin(0)
             .setDepth(1)
             .setScale(3.3);
 
-        bgMap.play('map_anim');
+        this.bgMap.setFrame(0);
 
 
         this.keys = this.input.keyboard.createCursorKeys();
@@ -91,10 +91,10 @@ class Map extends Phaser.Scene {
             this.scene.launch("craftScene");
         }
 
-        if (Phaser.Input.Keyboard.JustDown(this.navButton) && !this.scene.isActive('navigationScene'))
+        if (Phaser.Input.Keyboard.JustDown(this.navButton) && !this.destination && !this.scene.isActive('planetSelectScene') && !this.scene.isActive('navigationScene'))
         {
             this.scene.pause();
-            this.scene.launch("navigationScene");
+            this.scene.launch("planetSelectScene", { currentId: this.currentLocation ? this.currentLocation.id : 'earth' });
         }
 
         // example: slowly drain stats
@@ -112,12 +112,43 @@ class Map extends Phaser.Scene {
             this.scene.launch("pressureScene");
         }
 
-        // slowly draining
-        this.fuel -= 0.01;
+        const fuelDrain = this.destination ? 0.015 : 0.01;
+        this.fuel -= fuelDrain;
         this.trash += 0.01;
         this.food -= 0.008;
 
+        if (this.destination) {
+            if (this.bgMap && (!this.bgMap.anims || !this.bgMap.anims.isPlaying)) {
+                this.bgMap.play('map_anim');
+            }
+            const elapsed = this.time.now - this.travelStart;
+            const progress = Math.min(1, elapsed / this.travelTotalMs);
+            this.remainingKm = this.travelTotalKm * (1 - progress);
+            if (progress >= 1) {
+                this.arriveAtDestination();
+            }
+        }
+
         this.updateUI();
+        if (!this.isGameOver && this.fuel <= 0) {
+            this.triggerGameOver('FUEL DEPLETED');
+        }
+        if (!this.isGameOver && this.food <= 0) {
+            this.triggerGameOver('STARVED TO DEATH');
+        }
+    }
+
+    triggerGameOver(reason) {
+        this.isGameOver = true;
+        if (this.fuel < 0) this.fuel = 0;
+        if (this.food < 0) this.food = 0;
+        this.updateUI();
+        ['trashScene', 'planetSelectScene', 'navigationScene', 'pressureScene', 'farm'].forEach((key) => {
+            if (this.scene.isActive(key)) this.scene.stop(key);
+        });
+
+        this.scene.stop('mapScene');
+        this.scene.start('gameOverScene', { reason });
     }
 
     createUI() {
@@ -130,6 +161,13 @@ class Map extends Phaser.Scene {
         this.fuel = 50;
         this.trash = 0;
         this.food = 50;
+        this.isGameOver = false;
+
+        this.currentLocation = getPlanetById('earth');
+        this.destination = null;
+        this.travelStart = 0;
+        this.travelTotalMs = 0;
+        this.remainingKm = 0;
 
         // background box behind stats
         this.uiBg = this.add.rectangle(5, 5, 480, 80, 0x000000, 0.85)
@@ -164,12 +202,91 @@ class Map extends Phaser.Scene {
 
         this.ui.add([this.compass, this.compassNeedle]);
 
+        this.destBg = this.add.rectangle(5, this.scale.height - 35, 480, 28, 0x000000, 0.85)
+            .setOrigin(0);
+        this.destText = this.add.text(15, this.scale.height - 30, '', {
+            fontFamily: 'spaceranger',
+            fontSize: '14px',
+            fill: '#39FF14'
+        });
+        this.destDot = this.add.circle(this.scale.width - 25, this.scale.height - 21, 6, this.currentLocation ? this.currentLocation.color : 0x222222);
+
+        this.arrivalText = this.add.text(this.scale.width / 2, 120, '', {
+            fontFamily: 'spaceranger',
+            fontSize: '26px',
+            color: '#39FF14',
+            stroke: '#000000',
+            strokeThickness: 5,
+            align: 'center'
+        }).setOrigin(0.5).setAlpha(0).setDepth(150);
+
+        this.ui.add([this.destBg, this.destText, this.destDot, this.arrivalText]);
+
+    }
+
+    formatDistance(km) {
+        return formatDistanceKm(km);
+    }
+
+    travelTimeForKm(km) {
+        return 5 + Math.sqrt(km / 1e6) * 1.2;
+    }
+
+    startTravel(planet) {
+        if (!planet || this.isGameOver) return;
+        if (this.currentLocation && planet.id === this.currentLocation.id) return;
+
+        const totalKm = distanceBetween(this.currentLocation, planet);
+        this.destination = planet;
+        this.travelStart = this.time.now;
+        this.travelTotalMs = this.travelTimeForKm(totalKm) * 1000;
+        this.travelTotalKm = totalKm;
+        this.remainingKm = totalKm;
+        if (this.destDot) this.destDot.setFillStyle(planet.color);
+        if (this.bgMap) this.bgMap.play('map_anim');
+    }
+
+    arriveAtDestination() {
+        const planet = this.destination;
+        this.currentLocation = planet;
+        this.destination = null;
+        this.remainingKm = 0;
+        this.travelTotalKm = 0;
+        if (this.destDot) this.destDot.setFillStyle(planet.color);
+        if (this.bgMap) {
+            this.bgMap.stop();
+            this.bgMap.setFrame(0);
+        }
+        this.updateUI();
+
+        this.arrivalText.setText(`ARRIVED AT ${planet.name}`);
+        this.arrivalText.setAlpha(0);
+        this.tweens.add({
+            targets: this.arrivalText,
+            alpha: 1,
+            duration: 500,
+            yoyo: true,
+            hold: 1500,
+            ease: 'Power2',
+            onComplete: () => {
+                this.arrivalText.setText('');
+            }
+        });
     }
 
     updateUI() {
         this.fuelText.setText("Fuel: " + Math.floor(this.fuel));
         this.trashText.setText("trash: " + Math.floor(this.trash));
         this.foodText.setText("food: " + Math.floor(this.food));
+
+        if (this.destText) {
+            const here = this.currentLocation ? this.currentLocation.name : 'UNKNOWN';
+            if (this.destination) {
+                this.destText.setText(`LOC: ${here} > ${this.destination.name}   REMAIN ${this.formatDistance(this.remainingKm)}`);
+            } else {
+                this.destText.setText(`LOC: ${here}   IDLE`);
+            }
+        }
     }
 
     triggerSleepWarning() {

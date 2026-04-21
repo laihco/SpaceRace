@@ -14,12 +14,11 @@ let config = {
     physics: {
         default: "arcade",
         arcade: {
-            fps: 144,
             debug: false,
             debugShowStaticBody: false
         }
     },
-    scene: [Load, Map, Trash, Craft, PressureScene, Farm, NavigationTask]
+    scene: [Load, Map, Trash, Craft, PressureScene, Farm, PlanetSelect, NavigationTask, GameOver]
 }
 
 let game = new Phaser.Game(config)
